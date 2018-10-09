@@ -1,0 +1,18 @@
+{
+   "status":"OK",
+   "copyright":"Copyright (c) 2018 Pro Publica Inc. All Rights Reserved.",
+   "results":[
+      {
+         "first_member_id": "W000779",
+         "first_member_api_uri": "https://api.propublica.org/congress/v1/members/W000779.json",
+         "second_member_id": "Y000064",
+         "second_member_api_uri": "https://api.propublica.org/congress/v1/members/Y000064.json",
+         "congress": "115",
+         "chamber": "Senate",
+         "common_votes": 539,
+         "disagree_votes": 376,
+         "agree_percent": 30.24,
+         "disagree_percent": 69.76
+      }
+   ]
+}
