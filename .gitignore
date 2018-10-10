@@ -22,3 +22,10 @@ __pycache__/
 *.nav
 *.run.xml
 *.snm
+
+
+# Ignore the APIKey file
+milestones/APIKey.txt
+
+# Ignore the Untiled Test notebook
+milestones/Untitled.ipynb
