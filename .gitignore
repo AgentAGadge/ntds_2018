@@ -26,6 +26,7 @@ __pycache__/
 
 # Ignore the APIKey file
 milestones/APIKey.txt
+milestones/APIKey2.txt
 
 # Ignore the Untiled Test notebook
 milestones/Untitled.ipynb
