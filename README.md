@@ -39,8 +39,7 @@ Below is the teaching material you'll find in this repository.
 1. [Building graphs from features][t02b]
 1. [Plotting with matplotlib][t03]
 1. [Interactive graph visualization with gephi][t04]
-1. Numerical computing with numpy
-1. Sparse matrices with scipy
+1. [Sparse matrices with scipy][t05]
 1. Network science with networkx and graph-tool
 1. Graph signal processing with pygsp
 1. Concluding remarks
@@ -52,6 +51,7 @@ Below is the teaching material you'll find in this repository.
 [t02b]: https://nbviewer.jupyter.org/github/mdeff/ntds_2018/blob/outputs/tutorials/02b_graph_from_features.ipynb
 [t03]: https://nbviewer.jupyter.org/github/mdeff/ntds_2018/blob/outputs/tutorials/03_matplotlib.ipynb
 [t04]: https://nbviewer.jupyter.org/github/mdeff/ntds_2018/blob/outputs/tutorials/04_graph_visualization.ipynb
+[t05]: https://nbviewer.jupyter.org/github/mdeff/ntds_2018/blob/outputs/tutorials/05_scipy_sparse.ipynb
 
 For this course, we'll introduce and use the following tools:
 [conda] & [anaconda], [python], [jupyter], [git], [numpy], [scipy], [matplotlib], [pandas], [networkx], [graph-tool], [pygsp], [gephi].
@@ -78,7 +78,7 @@ The students have to deliver four milestones, following the theory seen in class
 
 1. [Network properties][m1]: measure and interpret some properties of the network.
 1. [Network models][m2]: fit some relevant network models and comment on their fitness.
-1. Spectral graph theory: visualize or cluster your graph using the spectrum of the graph Laplacian.
+1. Spectral graph theory: visualize and cluster the network using the spectrum of the graph Laplacian.
 1. Graph signal processing: analyze data (signals, features) on the graph.
 
 [m1]: https://nbviewer.jupyter.org/github/mdeff/ntds_2018/blob/outputs/milestones/1_network_properties.ipynb
@@ -115,7 +115,7 @@ Follow the below instructions to install it and create an environment for the co
 1. Enter the repository with `cd ntds_2018`.
 1. Create an environment with the packages required for the course with
    `conda env create -f environment.yml`.
-1. If everything went fine, you should be able to run the [`test_install.ipynb`][test_install] notebook after following the below steps.
+1. If everything went fine, you should be able to run the [`test_install.ipynb`][test_install] notebook after following the above steps.
 
 [test_install]: https://nbviewer.jupyter.org/github/mdeff/ntds_2018/blob/outputs/test_install.ipynb
 
