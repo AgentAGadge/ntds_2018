@@ -3,7 +3,8 @@ import json
 
 URL_ROOT = "https://api.propublica.org/congress/v1"
 URL_MEMBERS = lambda congress, chamber: f"{URL_ROOT}/{congress}/{chamber}/members.json"
-URL_COSPONS = lambda member: f"{URL_ROOT}/members/{member}/bills/cosponsored.json"
+URL_COSPONS = lambda member: /members/{member}/bills/cosponsored.json"
+URL_COSPONS_BILL = lambda bill, congress : f"{URL_ROOT}/{congress}/bills/{bill}/cosponsors.json
 
 def get_from_api(url, *, verbose=False):
     """ Performs GET request to URL with the ProPublica API Key header """
@@ -48,6 +49,12 @@ def get_bills_cosponsored(member_id, *, verbose=False):
     ans = _get(URL_COSPONS(member_id), verbose=verbose)
     bills = ans["results"][0]["bills"]
     return [bill["bill_id"] for bill in bills]
+
+def get_cosponsors(bill_id, verbose = False):
+    ans = _get(URL_COSPONS_BILL(bill_id, 115), verbose=verbose)
+    bills = ans["results"][0]["cosponsors"]
+    return [cosponsor["cosponsor_id"] for cosponsor in cosponsors]
+    
 
 def get_member_id(fname, lname, *, verbose=False):
     """ Fetches the ID of the member with first and last name """
