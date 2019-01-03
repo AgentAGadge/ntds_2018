@@ -7,11 +7,12 @@ import requests
 from scipy.spatial.distance import pdist, squareform
 
 RESULT_OFFSET = 20
-WEIGHTS_THRESHOLD = 0.5; 
+WEIGHTS_THRESHOLD = 0.5 
 
 ADJACENCY_FNAME = "adjacency.npy"
 FEATURES_FNAME = "vote_positions.pickle"
 LABELS_FNAME = "active_senators.pickle"
+PARTY_FNAME = "party.npy"
 URL_ROOT = "https://api.propublica.org/congress/v1"
 
 URL_MEMBERS = lambda congress, chamber: f"{URL_ROOT}/{congress}/{chamber}/members.json"
@@ -153,15 +154,22 @@ def get_cosponsors(bill_id, *,verbose = False):
     return [cosponsor["cosponsor_id"] for cosponsor in cosponsors]
 
 
-def main(*, requests_per_senator=1, adjacency=False, verbose=True):
+def main(*, requests_per_senator=1, adjacency=False, cosponsorship=False, verbose=True):
 
     if adjacency: 
         active_senators = get_active_senators()
         labels, features = df_from_votes(active_senators, requests_per_senator)
+        party = labels["party"].as_matrix()
+        adjacency = create_adjacency(features)
+
         labels.to_pickle(LABELS_FNAME)
         features.to_pickle(FEATURES_FNAME)
-        adjacency = create_adjacency(features)
+        np.save(PARTY_FNAME, party)
         np.save(ADJACENCY_FNAME, adjacency)
+
+    if cosponsorship:
+        labels = pd.read_pickle(LABELS_FNAME)
+        senator_ids = labels["id"].as_matrix()
 
     return 0
 
@@ -170,8 +178,10 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-adj", "--adjacency", help="get vote data and create adjacency matrix",
                         action="store_true")
+    parser.add_argument("-cs", "--cosponsorship", help="get cosponsorship data and create commonality matrix",
+                        action="store_true")
     parser.add_argument("--requests", type=int, default=1, help="requests per senator")
 
     args = parser.parse_args()
 
-    main(requests_per_senator=args.requests, adjacency=args.adjacency)
+    main(requests_per_senator=args.requests, adjacency=args.adjacency, cosponsorship=args.cosponsorship)
