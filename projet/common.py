@@ -1,7 +1,8 @@
 import os 
 
 RESULT_OFFSET = 20
-WEIGHTS_THRESHOLD = 0.5 
+SEED = 2018 #Used for randomness throughout the project 
+WEIGHTS_THRESHOLD = 0.5
 
 DATA_PATH = "data"
 URL_ROOT = "https://api.propublica.org/congress/v1"
