@@ -13,12 +13,15 @@ ADJACENCY_FNAME = "adjacency.npy"
 FEATURES_FNAME = "vote_positions.pickle"
 LABELS_FNAME = "active_senators.pickle"
 PARTY_FNAME = "party.npy"
+COMMITTEES_FNAME = "committees.json"
+
 URL_ROOT = "https://api.propublica.org/congress/v1"
 
 URL_MEMBERS = lambda congress, chamber: f"{URL_ROOT}/{congress}/{chamber}/members.json"
 URL_VOTES = lambda member, offset: f"{URL_ROOT}/members/{member}/votes.json?offset={offset}"
 URL_COSPONS = lambda member, offset: f"{URL_ROOT}/members/{member}/bills/cosponsored.json?offset={offset}"
 URL_COSPONS_BILL = lambda bill, congress : f"{URL_ROOT}/{congress}/bills/{bill}/cosponsors.json"
+URL_COMMITTEES = lambda congress, chamber: f"{URL_ROOT}/{congress}/{chamber}/committees.json"
 VOTE_ID = lambda congress, session, roll_call: f"C{congress}:S{session}:C{roll_call}"
 
 
@@ -146,7 +149,7 @@ def get_bills_cosponsored(member_id, offset, *, verbose=False):
     return [bill["bill_id"] for bill in bills]
 
 
-def get_cosponsors(bill_id, *,verbose = False):
+def get_cosponsors(bill_id, *, verbose=False):
     """ Fetches the list of cosponsors for a specific bill """
     
     ans = _get(URL_COSPONS_BILL(bill_id, 115), verbose=verbose)
@@ -154,7 +157,15 @@ def get_cosponsors(bill_id, *,verbose = False):
     return [cosponsor["cosponsor_id"] for cosponsor in cosponsors]
 
 
-def main(*, requests_per_senator=1, adjacency=False, cosponsorship=False, verbose=True):
+def get_committees(*, congress=115, chamber="senate", verbose=False):
+    """ Fetches the list of committees """
+
+    ans = _get(URL_COMMITTEES(congress, chamber), verbose=verbose)
+    return ans["committees"]
+
+
+
+def main(*, requests_per_senator=1, adjacency=False, cosponsorship=False, committees=False, verbose=True):
 
     if adjacency: 
         active_senators = get_active_senators()
@@ -171,6 +182,12 @@ def main(*, requests_per_senator=1, adjacency=False, cosponsorship=False, verbos
         labels = pd.read_pickle(LABELS_FNAME)
         senator_ids = labels["id"].as_matrix()
 
+    if committees:
+        # Gets committee data from API and stores it in json files
+        committees = get_committees(congress=115, verbose=True)
+        with open(COMMITTEES_FNAME, "w") as fp:
+            json.dump(committees, fp, indent=4)
+
     return 0
 
 if __name__=="__main__":
@@ -180,8 +197,10 @@ if __name__=="__main__":
                         action="store_true")
     parser.add_argument("-cs", "--cosponsorship", help="get cosponsorship data and create commonality matrix",
                         action="store_true")
+    parser.add_argument("-cmt", "--committees", help="get committees data and creates npy files",
+                        action="store_true")
     parser.add_argument("--requests", type=int, default=1, help="requests per senator")
 
     args = parser.parse_args()
 
-    main(requests_per_senator=args.requests, adjacency=args.adjacency, cosponsorship=args.cosponsorship)
+    main(requests_per_senator=args.requests, adjacency=args.adjacency, cosponsorship=args.cosponsorship, committees=args.committees)
