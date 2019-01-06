@@ -189,11 +189,13 @@ def get_cosponsors(bill_id, *, verbose=False):
     else:
         return []
 
+
 def get_committees(*, congress=115, chamber="senate", verbose=False):
     """ Fetches the list of committees """
 
     ans = _get(common.URL_COMMITTEES(congress, chamber), verbose=verbose)
     return ans["committees"]
+
 
 def main(*, requests_per_senator=1, get_active_senators=False, get_adjacency=False,\
     get_cosponsorship=False, get_committee_info=False, verbose=True):
