@@ -10,7 +10,6 @@ from scipy.spatial.distance import pdist, squareform
 
 import common
 
-
 def get_from_api(url, *, verbose=False):
     """ Performs GET request to URL with the ProPublica API Key header """
     vprint = lambda *a, **kwa: print(*a, **kwa) if verbose else None
@@ -180,7 +179,7 @@ def cosponsored_bills(senator_ids, requests_per_senator, *, verbose=False):
     return cosponsored
 
 
-def get_cosponsors(bill_id, *,verbose = False):
+def get_cosponsors(bill_id, *, verbose=False):
     """ Fetches the list of cosponsors for a specific bill """
     
     ans = _get(common.URL_COSPONS_BILL(bill_id, 115), verbose=verbose)
@@ -190,8 +189,14 @@ def get_cosponsors(bill_id, *,verbose = False):
     else:
         return []
 
+def get_committees(*, congress=115, chamber="senate", verbose=False):
+    """ Fetches the list of committees """
 
-def main(*, requests_per_senator=1, get_active_senators=False, get_adjacency=False, get_cosponsorship=False, verbose=True):
+    ans = _get(common.URL_COMMITTEES(congress, chamber), verbose=verbose)
+    return ans["committees"]
+
+def main(*, requests_per_senator=1, get_active_senators=False, get_adjacency=False,\
+    get_cosponsorship=False, get_committee_info=False, verbose=True):
 
     if not os.path.isdir(common.DATA_PATH):
         os.mkdir(common.DATA_PATH)
@@ -222,6 +227,12 @@ def main(*, requests_per_senator=1, get_active_senators=False, get_adjacency=Fal
             pickle.dump(cosponsored, cosp_ser, protocol=pickle.HIGHEST_PROTOCOL)
         
 
+    if get_committee_info:
+        # Gets committee data from API and stores it in json files
+        committees = get_committees(congress=115, verbose=True)
+        with open(common.COMMITTEES_FNAME, "w") as fp:
+            json.dump(committees, fp, indent=4)
+
     return 0
 
 
@@ -234,8 +245,12 @@ if __name__=="__main__":
                         action="store_true")                    
     parser.add_argument("-cs", "--cosponsorship", help="get cosponsorship data and create commonality matrix",
                         action="store_true")
+    parser.add_argument("-cmt", "--committees", help="get committees data and creates npy files",
+                        action="store_true")
     parser.add_argument("--requests", type=int, default=1, help="requests per senator")
 
     args = parser.parse_args()
 
-    main(requests_per_senator=args.requests, get_active_senators=args.active_senators, get_adjacency=args.adjacency, get_cosponsorship=args.cosponsorship)
+    main(requests_per_senator=args.requests, get_active_senators=args.active_senators,\
+        get_adjacency=args.adjacency, get_cosponsorship=args.cosponsorship, \
+        get_committee_info=args.committees)
