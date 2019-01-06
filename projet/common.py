@@ -12,6 +12,7 @@ ADJACENCY_FNAME = os.path.join(DATA_PATH, "adjacency.npy")
 COSPONSORED_FNAME = os.path.join(DATA_PATH, "cosponsored.pickle")
 PARTY_FNAME = os.path.join(DATA_PATH, "party.npy")
 VOTE_POSITIONS_FNAME = os.path.join(DATA_PATH, "vote_positions.pickle")
+VOTES_FNAME = os.path.join(DATA_PATH, "votes.pickle")
 
 URL_COSPONS = lambda member, offset: f"{URL_ROOT}/members/{member}/bills/cosponsored.json?offset={offset}"
 URL_COSPONS_BILL = lambda bill, congress : f"{URL_ROOT}/{congress}/bills/{bill}/cosponsors.json"
