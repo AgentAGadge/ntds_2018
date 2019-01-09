@@ -10,11 +10,12 @@ from scipy.spatial.distance import pdist, squareform
 
 import common
 
+
 def get_from_api(url, *, verbose=False):
     """ Performs GET request to URL with the ProPublica API Key header """
     vprint = lambda *a, **kwa: print(*a, **kwa) if verbose else None
 
-    with open("APIKey2.txt", 'r') as key_file:
+    with open(common.API_KEY, 'r') as key_file:
         api_key=key_file.readline()
         if api_key[-1] == '\n':
             api_key = api_key[:-1]
@@ -41,7 +42,7 @@ def filter_active_senators(senators, *, verbose=False):
     return active_senators
 
 
-def query_active_senators(*, congress=115, chamber="senate", verbose=False, compact=False):
+def query_active_senators(*, congress=common.CONGRESS, chamber=common.CHAMBER, verbose=False, compact=False):
     """
     Given congress and chamber, fetches active senators
     Args:
@@ -65,6 +66,13 @@ def query_active_senators(*, congress=115, chamber="senate", verbose=False, comp
 
 def votes_from_offset(member_id, offset, *, verbose=False):
     """
+    Given a senator ID, fetches common.RESULT_OFFSET votes, starting at 'offset'
+    Args:
+        member_id: senator ID 
+        offset: votes are retrieved after this value
+        verbose: set to True for debugging information
+    Returns:
+        list of votes, with a unique ID for identifiability
     """
     ans = _get(common.URL_VOTES(member_id, offset), verbose=verbose)
     if ans:
@@ -79,6 +87,15 @@ def votes_from_offset(member_id, offset, *, verbose=False):
 
 
 def flatten(d, parent_key='', sep='.'):
+    """
+    Flattens a dictionary, that is recursively unpacks composite keys
+    Args:
+        d: dictionary to be flatten
+        parent_key: prefix when a composite value is flattened recursively
+        sep: seperator between key and composite value
+    Returns:
+        the flattened dictionary
+    """
     items = []
     for k, v in d.items():
         new_key = parent_key + sep + k if parent_key else k
@@ -91,6 +108,15 @@ def flatten(d, parent_key='', sep='.'):
 
 def df_from_votes(senators, requests_per_senator, *, verbose=False):
     """
+    Given a list of senators, retrieves voting data and constructs two DataFrame structures, 
+    a first one that collects vote positions of senators on certain votes, and another one 
+    that contains information about the votes
+    Args:
+        senators: list of senators
+        requests_per_senator: number of URL requests per senator
+        verbose: set to True for debugging information
+    Returns:
+        pandas DataFrame 'vote_positions' and 'votes'
     """
     position_generator = []
     vote_generator = []
@@ -117,7 +143,7 @@ def df_from_votes(senators, requests_per_senator, *, verbose=False):
     vote_positions = pd.io.json.json_normalize(position_generator)
     
     votes = pd.io.json.json_normalize(vote_generator)
-    votes.drop(columns=["member_id", "position"])
+    votes.drop(columns=["member_id", "position"], inplace=True)
     votes.drop_duplicates(inplace=True)
 
     return vote_positions, votes
@@ -125,7 +151,11 @@ def df_from_votes(senators, requests_per_senator, *, verbose=False):
 
 def create_adjacency(features):
     """
-    Compute the weigths of the network
+    Builds an adjacency matrix based on the voting behavior of senators
+    Args:
+        features: DataFrame of senator's vote positions 
+    Returns:
+        the adjacency matrix as a numpy array
     """
     #Convert features to numbers
     features = features.replace('Yes', 1)
@@ -164,6 +194,15 @@ def cosponsored_from_offset(member_id, offset, *, verbose=False):
 
 
 def cosponsored_bills(senator_ids, requests_per_senator, *, verbose=False):
+    """
+    Given a list of senator IDs, retrieves a certain number of cosponsored bills
+    Args:
+        senator_ids: list of senators IDs
+        requests_per_senator: number of URL requests per senator
+        verbose: set to True for debugging information
+    Returns:
+        dict (K,V) where K is a senator ID and V is a set of cosponsored bills
+    """
     #Structure to keep the cosponsored bills
     cosponsored = {s_id: [] for s_id in senator_ids}
 
@@ -179,10 +218,11 @@ def cosponsored_bills(senator_ids, requests_per_senator, *, verbose=False):
     return cosponsored
 
 
-def get_cosponsors(bill_id, *, verbose=False):
+def cosponsors_of_bill(bill_id, *, verbose=False):
     """ Fetches the list of cosponsors for a specific bill """
     
-    ans = _get(common.URL_COSPONS_BILL(bill_id, 115), verbose=verbose)
+    bill, congress = bill_id.split('-')
+    ans = _get(common.URL_COSPONS_BILL(bill, congress), verbose=verbose)
     if ans:
         cosponsors = ans["cosponsors"]
         return [cosponsor["cosponsor_id"] for cosponsor in cosponsors]
@@ -190,7 +230,19 @@ def get_cosponsors(bill_id, *, verbose=False):
         return []
 
 
-def get_committees(*, congress=115, chamber="senate", verbose=False):
+def bills_cosponsors(bill_ids, *, verbose=False):
+    """
+    Given a list of bill IDs, retrieves the list of cosponsors
+    Args:
+        bill_ids: list of bill IDs
+        verbose: set to True for debugging information
+    Returns:
+        dict (K,V) where K is a bill ID and V the list of cosponsors
+    """
+    return {bill_id: cosponsors_of_bill(bill_id, verbose=verbose) for bill_id in bill_ids}
+
+
+def query_committees(*, congress=common.CONGRESS, chamber=common.CHAMBER, verbose=False):
     """ Fetches the list of committees """
 
     ans = _get(common.URL_COMMITTEES(congress, chamber), verbose=verbose)
@@ -198,14 +250,24 @@ def get_committees(*, congress=115, chamber="senate", verbose=False):
 
 
 def main(*, requests_per_senator=1, get_active_senators=False, get_adjacency=False,\
-    get_cosponsorship=False, get_committee_info=False, verbose=True):
+        get_cosponsorship=False, get_cosponsors=False, get_committees=False, verbose=False):
+    """
+    Given congress and chamber, fetches active senators
+    Args:
+        requests_per_senators: number of URL requests per senator
+        get_active_senators: boolean set True if the list of active senators should be retrieved and saved
+        get_adjacency: boolean set True if the initial adjacency matrix should be recomputed and saved
+        get_cosponsorship: boolean set True if the list of cosponsored bills by senators should be retrieved and saved
+        get_cosponsors: boolean set True if, for certain bills, the list of cosponsors should be retrieved and saved 
+        get_committees: boolean set True if committee data should be retrieved and saved
+    """
 
     if not os.path.isdir(common.DATA_PATH):
         os.mkdir(common.DATA_PATH)
 
     """
     if get_active_senators:
-        active_senators = query_active_senators()
+        active_senators = query_active_senators(verbose=verbose)
         party = [s["party"] for s in active_senators]
         np.save(common.ACTIVE_SENATORS_FNAME, active_senators)
         np.save(common.PARTY_FNAME, party)
@@ -213,7 +275,7 @@ def main(*, requests_per_senator=1, get_active_senators=False, get_adjacency=Fal
 
     if get_adjacency: 
         senators = np.load(common.ACTIVE_SENATORS_FNAME)
-        vote_positions, votes = df_from_votes(senators, requests_per_senator)
+        vote_positions, votes = df_from_votes(senators, requests_per_senator, verbose=verbose)
         adjacency = create_adjacency(vote_positions)
 
         vote_positions.to_pickle(common.VOTE_POSITIONS_FNAME)
@@ -223,15 +285,25 @@ def main(*, requests_per_senator=1, get_active_senators=False, get_adjacency=Fal
     if get_cosponsorship:
         senators = np.load(common.ACTIVE_SENATORS_FNAME)
         senator_ids = [s["id"] for s in senators]
-        cosponsored = cosponsored_bills(senator_ids, requests_per_senator)
+        cosponsored = cosponsored_bills(senator_ids, requests_per_senator, verbose=verbose)
         
-        with open(common.COSPONSORED_FNAME, "wb") as cosp_ser:
-            pickle.dump(cosponsored, cosp_ser, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(common.COSPONSORED_FNAME, "wb") as ser_dict:
+            pickle.dump(cosponsored, ser_dict, protocol=pickle.HIGHEST_PROTOCOL)
         
+    if get_cosponsors:
+        votes = pd.read_pickle(common.VOTES_FNAME)
+        bill_ids = votes["bill.bill_id"].values
+        check_syntax = lambda bill_id: len(bill_id.split('-')) == 2
+        valid_bill_ids = [bill_id for bill_id in bill_ids if isinstance(bill_id, str) and check_syntax(bill_id)]
+        unique_bill_ids = np.unique(valid_bill_ids)
+        cosponsors = bills_cosponsors(unique_bill_ids, verbose=verbose)
+        
+        with open(common.COSPONSORS_FNAME, "wb") as ser_dict:
+            pickle.dump(cosponsors, ser_dict, protocol=pickle.HIGHEST_PROTOCOL)
 
-    if get_committee_info:
+    if get_committees:
         # Gets committee data from API and stores it in json files
-        committees = get_committees(congress=115, verbose=True)
+        committees = query_committees(congress=common.CONGRESS, verbose=verbose)
         with open(common.COMMITTEES_FNAME, "w") as fp:
             json.dump(committees, fp, indent=4)
 
@@ -245,7 +317,9 @@ if __name__=="__main__":
                         action="store_true")
     parser.add_argument("-adj", "--adjacency", help="get vote data and create adjacency matrix",
                         action="store_true")                    
-    parser.add_argument("-cs", "--cosponsorship", help="get cosponsorship data and create commonality matrix",
+    parser.add_argument("-css", "--cosponsorship", help="get cosponsorship data and create commonality matrix",
+                        action="store_true")
+    parser.add_argument("-csp", "--cosponsors", help="get list of cosponsors of certain bills",
                         action="store_true")
     parser.add_argument("-cmt", "--committees", help="get committees data and creates npy files",
                         action="store_true")
@@ -255,4 +329,4 @@ if __name__=="__main__":
 
     main(requests_per_senator=args.requests, get_active_senators=args.active_senators,\
         get_adjacency=args.adjacency, get_cosponsorship=args.cosponsorship, \
-        get_committee_info=args.committees)
+        get_cosponsors=args.cosponsors, get_committees=args.committees)
