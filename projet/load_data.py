@@ -59,6 +59,9 @@ def query_active_senators(*, congress=common.CONGRESS, chamber=common.CHAMBER, v
     if ans: 
         members = ans["members"]    
         active_senators = filter_active_senators(members)
+        # add integer id
+        for id_num, senator in enumerate(active_senators):
+            senator["id_num"] = id_num
         return [[m.get(k, "NULL") for k in COMPACT_KEYS] for m in active_senators] if compact else active_senators
     else:
         return []
