@@ -13,6 +13,7 @@ WEIGHTS_THRESHOLD = 0.5
 ACTIVE_SENATORS_FNAME = os.path.join(DATA_PATH, "active_senators.npy")
 ADJACENCY_FNAME = os.path.join(DATA_PATH, "adjacency.npy")
 COMMITTEES_FNAME = os.path.join(DATA_PATH, "committees.json")
+COMMMITTEE_MEMBERS_FNAME = os.path.join(DATA_PATH, "committee_members.json")
 COSPONSORED_FNAME = os.path.join(DATA_PATH, "cosponsored.pickle")
 COSPONSORS_FNAME = os.path.join(DATA_PATH, "cosponsors.pickle")
 PARTY_FNAME = os.path.join(DATA_PATH, "party.npy")
