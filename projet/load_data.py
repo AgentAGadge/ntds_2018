@@ -273,6 +273,12 @@ def get_members_from_committees_json(*, write_to_disk=True, verbose=False):
     return committee_members
 
 
+def get_bills_committees():
+    """ Returns mapping from bill_id to list of committee codes sourcing this bill """
+    with open(common.BILLS_FNAME) as fp:
+        bills = json.load(fp)
+    return {b["bill_id"] : b["committee_codes"] for b in bills}
+
 def main(*, requests_per_senator=1, get_active_senators=False, get_adjacency=False,\
         get_cosponsorship=False, get_cosponsors=False, get_committees=False, verbose=False):
     """
